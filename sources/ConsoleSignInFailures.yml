@@ -20,7 +20,7 @@ Metadata:
 Parameters: 
   EmailAddress:
     Type: String
-    Default: colorfulrhythms927@icloud.com
+    Default: zennzennzenn-SE@gmail.com
   metricNamespace:
     Type: String
     Default: SigninMetrics
