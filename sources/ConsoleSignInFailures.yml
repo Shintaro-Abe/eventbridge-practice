@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creation EC2 instance
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -                                   
+        Label:
+          default: CloudWatch and SNS parameters                  
+        Parameters:                                  
+          - EmailAddress                                      
+          - metricNamespace
+          - metricName
+    ParameterLabels:                                    
+      EmailAddress: 
+        default: You will receive a verification email after the resource is created and you must approve it.
+      metricNamespace: 
+        default: The value of the namespace for this metric can be changed.
+      metricName: 
+        default: The value of this metric name can be changed.
+Parameters: 
+  EmailAddress:
+    Type: String
+    Default: colorfulrhythms927@icloud.com
+  metricNamespace:
+    Type: String
+    Default: SigninMetrics
+  metricName:
+    Type: String
+    Default: SigninFailureCount
+Resources:
+  Notification:
+    Type: AWS::SNS::Topic
+    Properties: 
+      TopicName: Signin-Notification
+      DisplayName: Notification
+      Subscription: 
+        - Endpoint: !Ref EmailAddress
+          Protocol: email
+  SigninFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterName: Signinfilter
+      FilterPattern: '{ ($.eventName = ConsoleLogin) && ($.errorMessage = "Failed authentication") }'
+      LogGroupName: !Sub aws-cloudtrail-logs-${AWS::AccountId}-6a8d0470
+      MetricTransformations: 
+        - 
+          MetricValue: 1
+          MetricNamespace: !Ref metricNamespace
+          MetricName: !Ref metricName
+
+  SigninAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties: 
+      AlarmActions: 
+        - !GetAtt Notification.TopicArn
+      AlarmName: ConsoleSign-in
+      Namespace: !Ref metricNamespace
+      MetricName: !Ref metricName
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1
+      EvaluationPeriods: 1
+      TreatMissingData: missing
+      Statistic: Sum
+      Threshold: 3
+      Period: 300
+
+
+
